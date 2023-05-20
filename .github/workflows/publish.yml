@@ -1,0 +1,57 @@
+name: trpc-nitro-adpater/publish
+
+on:
+  release:
+    types: [published]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [18]
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      # Setup .npmrc file to publish to GitHub Packages
+      - name: Setup node env 🏗 and .npmrc file to publish to GitHub Packages
+        uses: actions/setup-node@v2.1.2
+        with:
+          node-version: ${{ matrix.node }}
+          registry-url: 'https://npm.pkg.github.com'
+          # Defaults to the user or organization that owns the workflow file:
+          scope: '@observerly'
+
+      - name: Cache node_modules 📦
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install pnpm globally
+        run: npm install -g pnpm@8.5.1
+
+      - name: Install project dependencies 👨🏻‍💻
+        run: pnpm install
+
+      - name: Build the package ready for publishing
+        run: pnpm run build
+
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          registry: 'https://npm.pkg.github.com'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          check-version: true
+
+      - if: steps.publish.outputs.type != 'none'
+        run: |
+          echo "@observerly/trpc-nitro-adapter package version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"

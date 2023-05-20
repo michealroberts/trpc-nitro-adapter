@@ -1,0 +1,57 @@
+name: trpc-nitro-adpater/vitest
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  unit:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [18, 19]
+
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Vite App Specific Environment Variables
+      VITE_FIBER_API_BASE_URL: ${{ secrets.FIBER_API_BASE_URL }}
+
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@master
+
+      # Setup .npmrc file to publish to GitHub Packages
+      - name: Setup node env 🏗 and .npmrc file to publish to GitHub Packages
+        uses: actions/setup-node@v2.1.2
+        with:
+          node-version: ${{ matrix.node }}
+          registry-url: 'https://npm.pkg.github.com'
+          # Defaults to the user or organization that owns the workflow file:
+          scope: '@observerly'
+
+      - name: Cache node_modules 📦
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install pnpm globally
+        run: npm install -g pnpm@8.5.1
+
+      - name: Install project dependencies 👨🏻‍💻
+        run: pnpm install
+
+      - name: Build the package ready for publishing
+        run: pnpm run build
+
+      - name: Run vitest tests 🧪
+        run: pnpm run test
