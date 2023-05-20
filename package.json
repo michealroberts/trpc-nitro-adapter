@@ -1,0 +1,61 @@
+{
+  "name": "@observerly/trpc-nitro-adapter",
+  "version": "0.0.0",
+  "description": "observerly's tRPC.io adapter for the Nitro web server",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/observerly/trpc-nitro-adpater.git"
+  },
+  "author": "Micheal J. Roberts",
+  "prepublish": "tsc",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/observerly"
+  },
+  "keywords": [
+    "trpc",
+    "nitro",
+    "adapter"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/trpc-nitro-adapter.umd.js",
+  "module": "./dist/trpc-nitro-adapter.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/trpc-nitro-adapter.es.js",
+      "require": "./dist/trpc-nitro-adapter.umd.js"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@trpc/server": "^10.27.1",
+    "h3": "^1.6.6",
+    "ufo": "^1.1.2"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.1",
+    "@vitest/coverage-c8": "^0.31.1",
+    "c8": "^7.13.0",
+    "eslint": "^8.41.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "path": "^0.12.7",
+    "prettier": "^2.8.8",
+    "rollup": "^3.22.0",
+    "tslib": "^2.5.2",
+    "typescript": "^5.0.4",
+    "vite": "^4.3.8",
+    "vitest": "^0.31.1"
+  }
+}
