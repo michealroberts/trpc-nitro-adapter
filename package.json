@@ -1,16 +1,16 @@
 {
   "name": "trpc-nitro-adapter",
   "version": "0.1.0",
-  "description": "observerly's tRPC.io adapter for the Nitro web server",
+  "description": "A tRPC adapter for the nitro web server framework.",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/observerly/trpc-nitro-adpater.git"
+    "url": "git+https://github.com/michealroberts/trpc-nitro-adpater.git"
   },
   "author": "Micheal J. Roberts",
   "prepublish": "tsc",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/observerly"
+    "registry": "https://registry.npmjs.org/"
   },
   "keywords": [
     "trpc",
