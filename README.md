@@ -2,6 +2,12 @@
 
 A [tRPC](https://trpc.io) adapter for the [nitro](https://nitro.unjs.io) web server framework.
 
+## Requirements
+
+- [tRPC](https://trpc.io) v10._._
+- [nitro](https://nitro.unjs.io) v.2.4.\* or higher
+- [h3](https://github.com/unjs/h3) v.1.6.\* or higher
+
 ## Installation
 
 ```bash
