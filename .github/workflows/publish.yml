@@ -26,8 +26,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           registry-url: 'https://npm.pkg.github.com'
-          # Defaults to the user or organization that owns the workflow file:
-          scope: '@observerly'
 
       - name: Cache node_modules 📦
         uses: actions/cache@v2
@@ -48,10 +46,9 @@ jobs:
 
       - uses: JS-DevTools/npm-publish@v1
         with:
-          registry: 'https://npm.pkg.github.com'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.NPM_TOKEN }}
           check-version: true
 
       - if: steps.publish.outputs.type != 'none'
         run: |
-          echo "@observerly/trpc-nitro-adapter package version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"
+          echo "trpc-nitro-adapter package version changed: ${{ steps.publish.outputs.old-version }} => ${{ steps.publish.outputs.version }}"

@@ -1,5 +1,5 @@
 {
-  "name": "@observerly/trpc-nitro-adapter",
+  "name": "trpc-nitro-adapter",
   "version": "0.0.0",
   "description": "observerly's tRPC.io adapter for the Nitro web server",
   "private": false,
