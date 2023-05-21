@@ -6,6 +6,6 @@
 
 /*****************************************************************************************************************/
 
-export { defineTRPCNitroEventHandler } from './defineTRPCNitroEventHandler'
+export { defineNitroTRPCEventHandler } from './defineNitroTRPCEventHandler'
 
 /*****************************************************************************************************************/
