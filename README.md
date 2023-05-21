@@ -76,10 +76,10 @@ Then, in your nitro server, create a file in your routes directory named `[...tr
 // Import your router:
 import { appRouter } from './trpc/router.ts'
 
-import { defineTRPCNitroEventHandler } from 'trpc-nitro-adapter'
+import { defineNitroTRPCEventHandler } from 'trpc-nitro-adapter'
 
-// Export as default the defineTRPCNitroEventHandler function:
-export default defineTRPCNitroEventHandler({
+// Export as default the defineNitroTRPCEventHandler function:
+export default defineNitroTRPCEventHandler({
   router: appRouter,
   createContext: () => {
     // Return your custom defined context here:

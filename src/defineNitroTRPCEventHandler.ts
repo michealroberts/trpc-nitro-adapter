@@ -75,11 +75,11 @@ export type NitroRequestHandler = <TRouter extends AnyRouter>({
   createContext?: CreateContextFn<TRouter>
   responseMeta?: ResponseMetaFn<TRouter>
   onError?: OnErrorFn<TRouter>
-}) => Promise<EventHandler<string | undefined>>
+}) => EventHandler<string | undefined>
 
 /*****************************************************************************************************************/
 
-export const defineTRPCNitroEventHandler: NitroRequestHandler = async <TRouter extends AnyRouter>({
+export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends AnyRouter>({
   router,
   createContext,
   responseMeta,
