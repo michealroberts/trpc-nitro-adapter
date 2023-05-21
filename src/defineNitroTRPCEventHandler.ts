@@ -103,7 +103,7 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
     // Obtain the URL path:
     const path = getPath(event)
 
-    // Construct the HTTPReqest object:
+    // Construct the native tRPC HTTPReqest object:
     const req: HTTPRequest = {
       query,
       method: request.method || 'GET',
@@ -111,6 +111,7 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
       body: isMethod(event, 'GET') ? null : await readBody(event)
     }
 
+    // Resolve the native tRPC HTTP response:
     const { status, headers, body } = await resolveHTTPResponse({
       router,
       req,
@@ -125,13 +126,16 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
       }
     })
 
+    // Set the statis code accordingly:
     response.statusCode = status
 
+    // Merge response headers accordingly:
     headers &&
       Object.keys(headers).forEach(key => {
         response.setHeader(key, headers[key]!)
       })
 
+    // Return the response body "as is", JSON "stringified":
     return body
   })
 }
