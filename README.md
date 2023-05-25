@@ -28,38 +28,17 @@ First of all you need a router to handle your queries, mutations and subscriptio
 
 A sample router is given below, saved in in a file named `.trpc/router.ts`\*. Note, if your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then merge them into a single root appRouter.
 
+To read more about how to define a router, please consult the [tRPC router documentation](https://trpc.io/docs/server/routers#defining-a-router).
+
 ```typescript
 // file: ./trpc/router.ts
 
-import { z } from 'zod'
-
 import { initTRPC } from '@trpc/server'
-
-type Telescope = {
-  uid: string
-  name: string
-}
-
-const telescopes: Record<string, Telescope> = {}
 
 export const t = initTRPC.create()
 
 export const appRouter = t.router({
-  getTelescopeById: t.procedure.input(z.string()).query(opts => {
-    return telescopes[opts.input] // input type is string
-  }),
-  createTelescope: t.procedure
-    .input(
-      z.object({
-        name: z.string().min(3)
-      })
-    )
-    .mutation(opts => {
-      const id = Date.now().toString()
-      const telescope: telescope = { id, ...opts.input }
-      telescopes[telescope.id] = telescope
-      return telescope
-    })
+  // ... define your routes here
 })
 
 // Export your type definition for use in the adapter:
