@@ -10,8 +10,8 @@ import {
   type AnyRouter,
   type ProcedureType,
   type TRPCError,
-  inferRouterContext,
-  inferRouterError
+  type inferRouterContext,
+  type inferRouterError
 } from '@trpc/server'
 
 import { type TRPCResponse } from '@trpc/server/dist/rpc'
