@@ -20,7 +20,15 @@ import { type HTTPRequest, type ResponseMeta, resolveHTTPResponse } from '@trpc/
 
 import { createURL } from 'ufo'
 
-import { type EventHandler, type H3Event, defineEventHandler, readBody, isMethod } from 'h3'
+import {
+  type EventHandler,
+  type H3Event,
+  defineEventHandler,
+  readBody,
+  setHeader,
+  isMethod,
+  setResponseStatus
+} from 'h3'
 
 /*****************************************************************************************************************/
 
@@ -92,7 +100,7 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
 }) => {
   return defineEventHandler(async event => {
     // Extract the request and response objects from the H3 event:
-    const { req: request, res: response } = event.node
+    const { req: request } = event.node
 
     // Create a URL object from the request URL:
     const url = createURL(request.url!)
@@ -127,12 +135,14 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
     })
 
     // Set the statis code accordingly:
-    response.statusCode = status
+    setResponseStatus(event, status)
 
     // Merge response headers accordingly:
     headers &&
       Object.keys(headers).forEach(key => {
-        response.setHeader(key, headers[key]!)
+        if (headers[key]) {
+          setHeader(event, key, headers[key]!)
+        }
       })
 
     // Return the response body "as is", JSON "stringified":
