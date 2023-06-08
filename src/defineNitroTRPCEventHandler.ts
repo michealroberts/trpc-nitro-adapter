@@ -16,11 +16,23 @@ import {
 
 import { type TRPCResponse } from '@trpc/server/dist/rpc'
 
-import { type HTTPRequest, type ResponseMeta, resolveHTTPResponse } from '@trpc/server/http'
+import {
+  type HTTPRequest,
+  type ResponseMeta,
+  resolveHTTPResponse,
+  getBatchStreamFormatter
+} from '@trpc/server/http'
 
 import { createURL } from 'ufo'
 
-import { type EventHandler, type H3Event, defineEventHandler, readBody, isMethod } from 'h3'
+import {
+  type EventHandler,
+  type H3Event,
+  defineEventHandler,
+  isMethod,
+  readBody,
+  setHeader
+} from 'h3'
 
 /*****************************************************************************************************************/
 
@@ -29,6 +41,19 @@ import { type EventHandler, type H3Event, defineEventHandler, readBody, isMethod
 import { type MaybePromise } from './internals/types'
 
 import { getPath } from './internals/utils'
+import { getHeader } from 'h3'
+
+/*****************************************************************************************************************/
+
+export interface HTTPResponse {
+  status: number
+  headers?: Record<string, string | string[] | undefined>
+  body?: string
+}
+
+/*****************************************************************************************************************/
+
+export type ResponseChunk = [procedureIndex: number, responseBody: string]
 
 /*****************************************************************************************************************/
 
@@ -65,16 +90,24 @@ export type OnErrorFn<TRouter extends AnyRouter> = (opts: OnErrorPayload<TRouter
 
 /*****************************************************************************************************************/
 
+export interface RequestHandlerOptions {
+  wss?: boolean
+}
+
+/*****************************************************************************************************************/
+
 export type NitroRequestHandler = <TRouter extends AnyRouter>({
   router,
   createContext,
   responseMeta,
-  onError
+  onError,
+  options
 }: {
   router: TRouter
   createContext?: CreateContextFn<TRouter>
   responseMeta?: ResponseMetaFn<TRouter>
   onError?: OnErrorFn<TRouter>
+  options: RequestHandlerOptions
 }) => EventHandler<string | undefined>
 
 /*****************************************************************************************************************/
@@ -83,16 +116,20 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
   router,
   createContext,
   responseMeta,
-  onError
+  onError,
+  options
 }: {
   router: TRouter
   createContext?: CreateContextFn<TRouter>
   responseMeta?: ResponseMetaFn<TRouter>
   onError?: OnErrorFn<TRouter>
+  options?: RequestHandlerOptions
 }) => {
   return defineEventHandler(async event => {
     // Extract the request and response objects from the H3 event:
     const { req: request, res: response } = event.node
+
+    // const { wss = false } = options
 
     // Create a URL object from the request URL:
     const url = createURL(request.url!)
@@ -111,8 +148,76 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
       body: isMethod(event, 'GET') ? null : await readBody(event)
     }
 
+    let body = ''
+
+    // Is this a WebSocket stream:
+    let isStream = false
+
+    // Is this a WebSocket request:
+    let formatter: ReturnType<typeof getBatchStreamFormatter>
+
+    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
+      if ('body' in head && head.body) {
+        body = head.body
+      }
+
+      // Set the response status code:
+      if ('status' in head && (!response.statusCode || response.statusCode === 200)) {
+        response.statusCode = head.status
+      }
+
+      // Ensure we forward any and all headers, if they are defined:
+      for (const [key, value] of Object.entries(head.headers ?? {})) {
+        if (value !== undefined) {
+          setHeader(event, key, value)
+        }
+      }
+
+      if (isStreaming) {
+        // Set the transfer encoding header to chunked to enable streaming:
+        setHeader(event, 'Transfer-Encoding', 'chunked')
+
+        // Get the `Vary` header:
+        const vary = getHeader(event, 'Vary')
+        /**
+         *
+         * The Vary HTTP response header describes the parts of the request
+         * message aside from the method and URL that influenced the content
+         * of the response it occurs in. Most often, this is used to create
+         * a cache key when content negotiation is in use.
+         *
+         */
+        setHeader(event, 'Vary', vary ? `trpc-batch-mode ${vary}` : 'trpc-batch-mode')
+        isStream = true
+        formatter = getBatchStreamFormatter()
+        /**
+         *
+         * It is usually desired (it saves a TCP round-trip), but not when
+         * the first data is not sent until possibly much later.
+         * flushHeaders() bypasses the optimization and kickstarts the message.
+         *
+         */
+        response.flushHeaders()
+      }
+    }
+
+    const unstable_onChunk = ([index, string]: ResponseChunk) => {
+      if (index === -1) {
+        /**
+         *
+         * Full response, no streaming. This can happen if the response
+         * is an error or if response is empty (HEAD request)
+         *
+         */
+        response.end(string)
+      } else {
+        response.write(formatter!(index, string))
+        response.destroy()
+      }
+    }
+
     // Resolve the native tRPC HTTP response:
-    const { status, headers, body } = await resolveHTTPResponse({
+    await resolveHTTPResponse({
       router,
       req,
       path,
@@ -123,17 +228,16 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
           ...opts,
           req
         })
-      }
+      },
+      unstable_onHead,
+      unstable_onChunk
     })
 
-    // Set the statis code accordingly:
-    response.statusCode = status
-
-    // Merge response headers accordingly:
-    headers &&
-      Object.keys(headers).forEach(key => {
-        response.setHeader(key, headers[key]!)
-      })
+    if (isStream) {
+      // If this is a stream, we need to end the response:
+      response.write(formatter!.end())
+      response.end()
+    }
 
     // Return the response body "as is", JSON "stringified":
     return body
