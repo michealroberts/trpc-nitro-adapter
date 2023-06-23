@@ -1,6 +1,6 @@
 {
   "name": "trpc-nitro-adapter",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A tRPC adapter for the nitro web server framework.",
   "private": false,
   "repository": {
