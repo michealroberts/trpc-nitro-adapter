@@ -18,8 +18,7 @@
     "adapter"
   ],
   "engines": {
-    "node": ">=18.12.1 < 20",
-    "pnpm": "8.6.1"
+    "node": ">=18.12.1 < 20"
   },
   "license": "MIT",
   "files": [
