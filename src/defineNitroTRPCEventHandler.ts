@@ -22,6 +22,8 @@ import { createURL } from 'ufo'
 
 import {
   type EventHandler,
+  type EventHandlerRequest,
+  type EventHandlerResponse,
   type H3Event,
   defineEventHandler,
   readBody,
@@ -73,7 +75,10 @@ export type OnErrorFn<TRouter extends AnyRouter> = (opts: OnErrorPayload<TRouter
 
 /*****************************************************************************************************************/
 
-export type NitroRequestHandler = <TRouter extends AnyRouter>({
+export type NitroRequestHandler = <
+  TRouter extends AnyRouter,
+  TRequest extends EventHandlerRequest
+>({
   router,
   createContext,
   responseMeta,
@@ -83,7 +88,7 @@ export type NitroRequestHandler = <TRouter extends AnyRouter>({
   createContext?: CreateContextFn<TRouter>
   responseMeta?: ResponseMetaFn<TRouter>
   onError?: OnErrorFn<TRouter>
-}) => EventHandler<string | undefined>
+}) => EventHandler<TRequest, EventHandlerResponse<string | undefined>>
 
 /*****************************************************************************************************************/
 

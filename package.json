@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@trpc/server": "^10.32.0",
-    "h3": "^1.7.0",
+    "h3": "^1.8.1",
     "ufo": "^1.1.2"
   },
   "devDependencies": {
