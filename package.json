@@ -29,6 +29,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/trpc-nitro-adapter.es.js",
       "require": "./dist/trpc-nitro-adapter.umd.js"
     }
