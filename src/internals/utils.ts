@@ -16,11 +16,11 @@ export const getPath = (event: H3Event): string => {
   const params = event.context.params
 
   if (!params) {
-    // Throw an error if the trpc paramater is not a string or an array:
+    // Throw an error if the trpc parameter is not a string or an array:
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message:
-        'Please ensure that the trpc paramater is defined in your routes file e.g., ./routes/[trpc].ts',
+        'Please ensure that the trpc parameter is defined in your routes file e.g., ./routes/[trpc].ts',
       cause: 'Nitro Routing Configuration'
     })
   }
@@ -33,11 +33,11 @@ export const getPath = (event: H3Event): string => {
     return params.trpc
   }
 
-  // Throw an error if the trpc paramater is not a string or an array:
+  // Throw an error if the trpc parameter is not a string or an array:
   throw new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
     message:
-      'Please ensure that the trpc paramater is defined in your routes file e.g., ./routes/[trpc].ts',
+      'Please ensure that the trpc parameter is defined in your routes file e.g., ./routes/[trpc].ts',
     cause: 'Nitro Routing Configuration'
   })
 }

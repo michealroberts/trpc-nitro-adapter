@@ -110,7 +110,7 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
     // Create a URL object from the request URL:
     const url = createURL(request.url!)
 
-    // Obtain the URL query paramaters:
+    // Obtain the URL query parameters:
     const query = url.searchParams
 
     // Obtain the URL path:
@@ -139,7 +139,7 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
       }
     })
 
-    // Set the statis code accordingly:
+    // Set the status code accordingly:
     setResponseStatus(event, status)
 
     // Merge response headers accordingly:
