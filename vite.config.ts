@@ -29,7 +29,7 @@ export default defineConfig({
       fileName: format => `trpc-nitro-adapter.${format}.js`
     },
     rollupOptions: {
-      external: ['./playground/*.ts'],
+      external: [/^@trpc\/server/, /^ufo/, /^h3/],
       output: {
         sourcemap: true
       }
