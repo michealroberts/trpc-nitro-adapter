@@ -8,8 +8,7 @@ import { resolve } from 'path'
 export default defineConfig({
   test: {
     watch: false,
-    passWithNoTests: true,
-    threads: false
+    passWithNoTests: true
   },
   plugins: [
     typescript({
