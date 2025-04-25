@@ -10,20 +10,20 @@ import {
   type AnyRouter,
   type ProcedureType,
   type TRPCError,
-  type inferRouterContext,
-  type inferRouterError
+  type inferRouterContext
 } from '@trpc/server'
 
-import { type TRPCResponse } from '@trpc/server/dist/rpc'
+import { type ResponseMeta } from '@trpc/server/http'
+import { type TRPCResponse } from '@trpc/server/rpc'
 
-import { type HTTPRequest, type ResponseMeta, resolveHTTPResponse } from '@trpc/server/http'
+// Use the http APIs from tRPC server
+import { resolveResponse } from '@trpc/server/unstable-core-do-not-import'
 
 import { createURL } from 'ufo'
 
 import {
   type EventHandler,
   type EventHandlerRequest,
-  type EventHandlerResponse,
   type H3Event,
   defineEventHandler,
   readBody,
@@ -49,11 +49,12 @@ export type CreateContextFn<TRouter extends AnyRouter> = (
 /*****************************************************************************************************************/
 
 export interface ResponseMetaFnPayload<TRouter extends AnyRouter> {
-  data: TRPCResponse<unknown, inferRouterError<TRouter>>[]
+  data: TRPCResponse[]
   ctx?: inferRouterContext<TRouter>
-  paths?: string[]
+  paths?: readonly string[]
   type: ProcedureType | 'unknown'
   errors: TRPCError[]
+  eagerGeneration: boolean
 }
 
 export type ResponseMetaFn<TRouter extends AnyRouter> = (
@@ -66,7 +67,7 @@ export interface OnErrorPayload<TRouter extends AnyRouter> {
   error: TRPCError
   type: ProcedureType | 'unknown'
   path: string | undefined
-  req: HTTPRequest
+  req: Request
   input: unknown
   ctx: undefined | inferRouterContext<TRouter>
 }
@@ -88,7 +89,7 @@ export type NitroRequestHandler = <
   createContext?: CreateContextFn<TRouter>
   responseMeta?: ResponseMetaFn<TRouter>
   onError?: OnErrorFn<TRouter>
-}) => EventHandler<TRequest, EventHandlerResponse<string | undefined>>
+}) => EventHandler<TRequest, Promise<string>>
 
 /*****************************************************************************************************************/
 
@@ -110,47 +111,90 @@ export const defineNitroTRPCEventHandler: NitroRequestHandler = <TRouter extends
     // Create a URL object from the request URL:
     const url = createURL(request.url!)
 
-    // Obtain the URL query parameters:
-    const query = url.searchParams
-
     // Obtain the URL path:
     const path = getPath(event)
 
-    // Construct the native tRPC HTTPReqest object:
-    const req: HTTPRequest = {
-      query,
+    // Construct a fetch-compatible Request object for tRPC v11
+    const reqBody = isMethod(event, 'GET') ? undefined : JSON.stringify(await readBody(event))
+    const req = new Request(url.toString(), {
       method: request.method || 'GET',
-      headers: request.headers,
-      body: isMethod(event, 'GET') ? null : await readBody(event)
+      headers: new Headers(request.headers as HeadersInit),
+      body: reqBody
+    })
+
+    // Create wrapper for context function to match v11 API
+    const wrappedCreateContext = async (_: { info: any }) => {
+      return createContext ? await createContext(event) : undefined
     }
 
-    // Resolve the native tRPC HTTP response:
-    const { status, headers, body } = await resolveHTTPResponse({
+    // Wrapper for response meta to match v11 signature
+    const wrappedResponseMeta = responseMeta
+      ? (opts: {
+          data: TRPCResponse[]
+          ctx?: inferRouterContext<TRouter>
+          paths: readonly string[] | undefined
+          info: any | undefined
+          type: ProcedureType | 'unknown'
+          errors: TRPCError[]
+          eagerGeneration: boolean
+        }) => {
+          // Transform to match our adapter's expected format
+          return responseMeta({
+            data: opts.data,
+            ctx: opts.ctx,
+            paths: opts.paths,
+            type: opts.type,
+            errors: opts.errors,
+            eagerGeneration: opts.eagerGeneration
+          })
+        }
+      : undefined
+
+    // Wrapper for onError to match v11 signature
+    const wrappedOnError = onError
+      ? (opts: {
+          error: TRPCError
+          type: ProcedureType | 'unknown'
+          path: string | undefined
+          input: unknown
+          ctx: inferRouterContext<TRouter> | undefined
+        }) => {
+          onError({
+            ...opts,
+            req
+          })
+        }
+      : undefined
+
+    // Resolve the tRPC response using the new v11 API:
+    const response = await resolveResponse({
       router,
       req,
       path,
-      createContext: async () => createContext?.(event),
-      responseMeta,
-      onError: opts => {
-        onError?.({
-          ...opts,
-          req
-        })
-      }
+      error: null,
+      createContext: wrappedCreateContext,
+      responseMeta: wrappedResponseMeta,
+      onError: wrappedOnError
     })
+
+    // Extract response properties
+    const status = response.status
+    const headers = response.headers
+    const body = await response.text()
 
     // Set the status code accordingly:
     setResponseStatus(event, status)
 
     // Merge response headers accordingly:
-    headers &&
-      Object.keys(headers).forEach(key => {
-        if (headers[key]) {
-          setHeader(event, key, headers[key]!)
+    if (headers) {
+      headers.forEach((value, key) => {
+        if (value) {
+          setHeader(event, key, value)
         }
       })
+    }
 
-    // Return the response body "as is", JSON "stringified":
+    // Return the response body as string:
     return body
   })
 }
